@@ -27,9 +27,11 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".activities.AdminJustificationActivity"
+            android:name=".activities.AdminUserManagementActivity"
             android:exported="false" />
-        <!-- Activities that use custom toolbar (NoActionBar theme) -->
+        <activity
+            android:name=".activities.AdminJustificationActivity"
+            android:exported="false" /> <!-- Activities that use custom toolbar (NoActionBar theme) -->
         <activity
             android:name=".activities.SessionManagementActivity"
             android:exported="false"

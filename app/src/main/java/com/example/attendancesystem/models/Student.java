@@ -1,6 +1,8 @@
 package com.example.attendancesystem.models;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.PropertyName;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +14,7 @@ public class Student {
     private String studentId;
     private String profileImageUrl;
     private Timestamp createdAt;
+    @PropertyName("isActive")
     private boolean isActive;
     private String phoneNumber;
     private String department;
@@ -48,6 +51,20 @@ public class Student {
         this.year = year;
     }
 
+    public Student(String email, String fullName, String studentId, String department, String field, String year, String phoneNumber) {
+        this.email = email;
+        this.fullName = fullName;
+        this.studentId = studentId;
+        this.department = department;
+        this.field = field;
+        this.year = year;
+        this.phoneNumber = phoneNumber; // Ensure this is set
+        this.profileImageUrl = ""; // Default empty
+        this.isActive = true; // Default true
+        this.createdAt = Timestamp.now();
+        this.lastUpdatedAt = Timestamp.now();
+        this.lastLoginAt = null; // Default null
+    }
     // Méthode pour convertir en Map pour Firebase
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();

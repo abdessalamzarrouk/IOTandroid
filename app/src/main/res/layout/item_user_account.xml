@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_user_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:text="Nom: John Doe"/>
+
+        <TextView
+            android:id="@+id/tv_user_email"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:text="Email: john.doe@example.com"/>
+
+        <TextView
+            android:id="@+id/tv_user_type_id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:text="Type: Student (ID: S12345)"/>
+
+        <TextView
+            android:id="@+id/tv_user_department"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:text="Département: CS, Filière: SE, Année: L3"/>
+
+        <TextView
+            android:id="@+id/tv_user_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:text="Statut: Actif"
+            android:textColor="@color/green_700"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_edit_user"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Modifier"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/blue_500"
+                style="@style/Widget.AppCompat.Button.Colored"/>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_toggle_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:text="Désactiver"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/red_700"
+                style="@style/Widget.AppCompat.Button.Colored"/>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_remove_user"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="Supprimer"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/red_700"
+            style="@style/Widget.AppCompat.Button.Colored"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

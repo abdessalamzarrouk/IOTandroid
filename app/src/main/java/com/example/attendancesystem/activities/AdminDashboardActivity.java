@@ -114,14 +114,15 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private void setupListeners() {
         cardUserManagement.setOnClickListener(v -> {
-            Utils.showToast(this, "Redirection vers la gestion des justifications...");
-            Intent intent = new Intent(AdminDashboardActivity.this, AdminJustificationActivity.class);
+            Utils.showToast(this, "Redirection vers la gestion des users...");
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminUserManagementActivity.class);
             startActivity(intent);
         });
 
         cardTerminalManagement.setOnClickListener(v -> {
-            // Puisqu'on n'a qu'un seul terminal, on peut afficher ses statistiques
-            Utils.showToast(this, "Terminal principal - Statut: Actif");
+            Utils.showToast(this, "Redirection vers la gestion des justifications...");
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminJustificationActivity.class);
+            startActivity(intent);
         });
 
         cardSystemReports.setOnClickListener(v -> {

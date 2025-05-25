@@ -21,6 +21,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -1235,6 +1236,204 @@ public class FirebaseManager {
                 })
                 .addOnFailureListener(e -> callback.onFailure("Error querying attendance for update: " + e.getMessage()));
     }
+
+
+    // =================== GESTION DES COMPTES (ADMIN) ===================
+
+    /**
+     * Crée un nouveau compte utilisateur (étudiant ou enseignant) dans Firebase Auth
+     * et sauvegarde son profil dans Firestore.
+     * Le type d'utilisateur est déterminé par le 'role' fourni.
+     * Un mot de passe temporaire est généré. L'utilisateur devra le réinitialiser.
+     */
+    public void createNewUserAccount(String email, String password, String role,
+                                     Student studentProfile, Teacher teacherProfile,
+                                     DataCallback<String> callback) {
+        if (email == null || email.isEmpty() || password == null || password.isEmpty()) {
+            callback.onFailure("Email ou mot de passe invalide.");
+            return;
+        }
+
+        mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnSuccessListener(authResult -> {
+                    FirebaseUser user = authResult.getUser();
+                    if (user != null) {
+                        Log.d(TAG, "Auth user created: " + user.getEmail() + ", UID: " + user.getUid());
+
+                        // Now save the profile to Firestore based on role
+                        if ("student".equalsIgnoreCase(role) && studentProfile != null) {
+                            studentProfile.setEmail(email); // Ensure email is set
+                            studentProfile.setCreatedAt(Timestamp.now());
+                            studentProfile.setLastUpdatedAt(Timestamp.now());
+                            db.collection(STUDENTS_COLLECTION)
+                                    .document(email) // Use email as doc ID
+                                    .set(studentProfile.toMap())
+                                    .addOnSuccessListener(aVoid -> callback.onSuccess("Compte étudiant créé avec succès!"))
+                                    .addOnFailureListener(e -> {
+                                        // If Firestore save fails, try to delete Auth user
+                                        user.delete();
+                                        callback.onFailure("Échec de la sauvegarde du profil étudiant: " + e.getMessage());
+                                    });
+                        } else if ("teacher".equalsIgnoreCase(role) && teacherProfile != null) {
+                            teacherProfile.setEmail(email); // Ensure email is set
+                            teacherProfile.setCreatedAt(Timestamp.now());
+                            teacherProfile.setLastUpdatedAt(Timestamp.now());
+                            db.collection(TEACHERS_COLLECTION)
+                                    .document(email) // Use email as doc ID
+                                    .set(teacherProfile.toMap())
+                                    .addOnSuccessListener(aVoid -> callback.onSuccess("Compte enseignant créé avec succès!"))
+                                    .addOnFailureListener(e -> {
+                                        // If Firestore save fails, try to delete Auth user
+                                        user.delete();
+                                        callback.onFailure("Échec de la sauvegarde du profil enseignant: " + e.getMessage());
+                                    });
+                        } else {
+                            // Role mismatch or profile missing, delete Auth user
+                            user.delete();
+                            callback.onFailure("Rôle invalide ou profil manquant pour la création du compte.");
+                        }
+                    } else {
+                        callback.onFailure("Erreur inattendue lors de la création de l'utilisateur Auth.");
+                    }
+                })
+                .addOnFailureListener(e -> callback.onFailure("Échec de la création du compte Auth: " + e.getMessage()));
+    }
+
+    public void deleteUserAccount(String email, String role, DataCallback<Void> callback) {
+        String collectionPath = (role.equals("student")) ? "students" : "teachers";
+
+        db.collection(collectionPath)
+                .whereEqualTo("email", email) // Find the user document by email
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        // FIX: Declare userDocument as DocumentSnapshot as getDocuments().get(0) returns DocumentSnapshot
+                        DocumentSnapshot userDocument = queryDocumentSnapshots.getDocuments().get(0);
+                        String userId = userDocument.getId(); // Get the Firestore document ID
+
+                        // Delete the document
+                        db.collection(collectionPath).document(userId)
+                                .delete()
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d(TAG, "User document deleted from Firestore: " + email + " (ID: " + userId + ")");
+                                    callback.onSuccess(aVoid);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error deleting user document from Firestore: " + email, e);
+                                    callback.onFailure("Erreur de suppression du document utilisateur: " + e.getMessage());
+                                });
+                    } else {
+                        Log.w(TAG, "User document not found for deletion: " + email + " in collection: " + collectionPath);
+                        callback.onFailure("Utilisateur non trouvé.");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error querying for user document to delete: " + email, e);
+                    callback.onFailure("Erreur de recherche de l'utilisateur pour suppression: " + e.getMessage());
+                });
+    }
+    /**
+     * Récupère tous les comptes étudiants.
+     */
+    public void getAllStudents(DataCallback<List<Student>> callback) {
+        db.collection(STUDENTS_COLLECTION)
+                .orderBy("fullName") // Order by name for display
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Student> students = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        try {
+                            Student student = document.toObject(Student.class);
+                            Log.d("FirebaseDebug", "Fetched Student: " + student.getEmail() + ", isActive: " + student.isActive());
+                            students.add(student);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error deserializing student document: " + document.getId(), e);
+                        }
+                    }
+                    callback.onSuccess(students);
+                })
+                .addOnFailureListener(e -> callback.onFailure("Erreur lors de la récupération des étudiants: " + e.getMessage()));
+    }
+
+    /**
+     * Récupère tous les comptes enseignants.
+     */
+    public void getAllTeachers(DataCallback<List<Teacher>> callback) {
+        db.collection(TEACHERS_COLLECTION)
+                .orderBy("fullName") // Order by name for display
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Teacher> teachers = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        try {
+                            Teacher teacher = document.toObject(Teacher.class);
+                            Log.d("FirebaseDebug", "Fetched Teacher: " + teacher.getEmail() + ", isActive: " + teacher.isActive());
+                            teachers.add(teacher);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error deserializing teacher document: " + document.getId(), e);
+                        }
+                    }
+                    callback.onSuccess(teachers);
+                })
+                .addOnFailureListener(e -> callback.onFailure("Erreur lors de la récupération des enseignants: " + e.getMessage()));
+    }
+
+    /**
+     * Met à jour le profil d'un étudiant.
+     */
+    public void updateStudentProfile(Student student, DataCallback<Void> callback) {
+        if (student.getEmail() == null || student.getEmail().isEmpty()) {
+            callback.onFailure("L'email de l'étudiant est manquant pour la mise à jour.");
+            return;
+        }
+        db.collection(STUDENTS_COLLECTION)
+                .document(student.getEmail())
+                .update(student.toMap()) // Use toMap for specific field updates if needed
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure("Erreur lors de la mise à jour du profil étudiant: " + e.getMessage()));
+    }
+
+    /**
+     * Met à jour le profil d'un enseignant.
+     */
+    public void updateTeacherProfile(Teacher teacher, DataCallback<Void> callback) {
+        if (teacher.getEmail() == null || teacher.getEmail().isEmpty()) {
+            callback.onFailure("L'email de l'enseignant est manquant pour la mise à jour.");
+            return;
+        }
+        db.collection(TEACHERS_COLLECTION)
+                .document(teacher.getEmail())
+                .update(teacher.toMap()) // Use toMap for specific field updates if needed
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure("Erreur lors de la mise à jour du profil enseignant: " + e.getMessage()));
+    }
+
+    /**
+     * Désactive/active un compte utilisateur dans Firestore (isActive field).
+     * Note: La désactivation/réactivation dans Firebase Auth est complexe côté client (requiert ré-authentification).
+     * Il est plus sûr de gérer l'accès via le champ isActive dans Firestore et des règles de sécurité.
+     */
+    public void setUserActiveStatus(String email, String role, boolean isActive, DataCallback<Void> callback) {
+        String collectionPath;
+        if ("student".equalsIgnoreCase(role)) {
+            collectionPath = STUDENTS_COLLECTION;
+        } else if ("teacher".equalsIgnoreCase(role)) {
+            collectionPath = TEACHERS_COLLECTION;
+        } else {
+            callback.onFailure("Rôle non reconnu pour la mise à jour du statut d'activité.");
+            return;
+        }
+
+        db.collection(collectionPath)
+                .document(email)
+                .update("isActive", isActive, "lastUpdatedAt", FieldValue.serverTimestamp())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User " + email + " isActive status set to " + isActive);
+                    callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> callback.onFailure("Erreur lors de la mise à jour du statut d'activité: " + e.getMessage()));
+    }
+
 
 
     // =================== MÉTHODES UTILITAIRES ===================
