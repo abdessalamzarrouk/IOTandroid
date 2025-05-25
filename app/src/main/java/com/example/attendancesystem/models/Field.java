@@ -2,7 +2,9 @@ package com.example.attendancesystem.models;
 
 import com.google.firebase.Timestamp;
 import java.io.Serializable; // Import Serializable
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Field implements Serializable { // Implement Serializable
@@ -12,6 +14,7 @@ public class Field implements Serializable { // Implement Serializable
     private String description;
     private Timestamp createdAt;
     private Timestamp lastUpdatedAt;
+    private List<ScheduleEntry> weeklySchedule;
 
     // Required public no-argument constructor for Firebase
     public Field() {
@@ -29,16 +32,26 @@ public class Field implements Serializable { // Implement Serializable
         this.lastUpdatedAt = Timestamp.now();
     }
 
+    public Field(String fieldId, String fieldName, String department, String description, List<ScheduleEntry> weeklySchedule) {
+        this.fieldId = fieldId;
+        this.fieldName = fieldName;
+        this.department = department;
+        this.description = description;
+        this.weeklySchedule = weeklySchedule;
+    }
+
     // Getters
     public String getFieldId() { return fieldId; }
     public String getFieldName() { return fieldName; }
     public String getDepartment() { return department; }
     public String getDescription() { return description; }
+    public List<ScheduleEntry> getWeeklySchedule() { return weeklySchedule; } // NEW GETTER
     public Timestamp getCreatedAt() { return createdAt; }
     public Timestamp getLastUpdatedAt() { return lastUpdatedAt; }
 
     // Setters
     public void setFieldId(String fieldId) { this.fieldId = fieldId; }
+    public void setWeeklySchedule(List<ScheduleEntry> weeklySchedule) { this.weeklySchedule = weeklySchedule; }
     public void setFieldName(String fieldName) { this.fieldName = fieldName; }
     public void setDepartment(String department) { this.department = department; }
     public void setDescription(String description) { this.description = description; }
@@ -54,6 +67,16 @@ public class Field implements Serializable { // Implement Serializable
         map.put("description", description);
         map.put("createdAt", createdAt);
         map.put("lastUpdatedAt", lastUpdatedAt);
+        // Convert list of ScheduleEntry to a list of maps for Firestore
+        if (weeklySchedule != null) {
+            List<Map<String, Object>> scheduleMaps = new ArrayList<>();
+            for (ScheduleEntry entry : weeklySchedule) {
+                scheduleMaps.add(entry.toMap());
+            }
+            map.put("weeklySchedule", scheduleMaps);
+        } else {
+            map.put("weeklySchedule", null);
+        }
         return map;
     }
 

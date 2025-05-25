@@ -64,6 +64,10 @@ public class FirebaseManager {
     // Singleton pattern
     private static FirebaseManager instance;
 
+    public FirebaseFirestore getFirestore() {
+        return db;
+    }
+
     public static class AttendanceStats {
         private int totalSessions;
         private int attendedSessions;
@@ -1449,52 +1453,29 @@ public class FirebaseManager {
      * @param field The Field object to save. Its fieldId will be used as the document ID.
      * @param callback Callback for success or failure.
      */
+
+    // --- Field Operations (UPDATED to handle weeklySchedule) ---
+
     public void createField(Field field, DataCallback<Void> callback) {
-        if (field.getFieldId() == null || field.getFieldId().isEmpty()) {
-            callback.onFailure("Field ID cannot be null or empty for creation.");
-            return;
-        }
         db.collection("fields").document(field.getFieldId())
-                .set(field) // Firestore can directly convert Field object to document
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Field created: " + field.getFieldName());
-                    callback.onSuccess(aVoid);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error creating field: " + field.getFieldName(), e);
-                    callback.onFailure("Failed to create field: " + e.getMessage());
-                });
-    }
-
-    // --- Admin: Field Management (Filières) ---
-
-    /**
-     * Creates a new field (filière).
-     * @param fieldName The name of the field.
-     * @param department The department.
-     * @param description A description.
-     * @param callback Callback for success/failure.
-     */
-    public void createField(String fieldName, String department, String description, DataCallback<Void> callback) {
-        String fieldId = UUID.randomUUID().toString(); // Generate unique ID
-        Field newField = new Field(fieldId, fieldName, department, description);
-
-        db.collection(FIELDS_COLLECTION).document(fieldId)
-                .set(newField.toMap())
+                .set(field.toMap()) // Use toMap() which now includes weeklySchedule
                 .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    /**
-     * Modifies an existing field.
-     * @param fieldId The ID of the field to modify.
-     * @param updates A map of fields to update.
-     * @param callback Callback for success/failure.
-     */
     public void modifyField(String fieldId, Map<String, Object> updates, DataCallback<Void> callback) {
-        updates.put("lastUpdatedAt", Timestamp.now());
-        db.collection(FIELDS_COLLECTION).document(fieldId)
+        // IMPORTANT: If you pass the whole `Field` object via `toMap()` then `updates` should be `field.toMap()`
+        // If you are selectively updating, ensure `weeklySchedule` updates are handled correctly (e.g., replace the whole list)
+        db.collection("fields").document(fieldId)
                 .update(updates)
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    // Modified to accept a Field object that includes the schedule
+    public void modifyField(String fieldId, Field updatedField, DataCallback<Void> callback) {
+        db.collection("fields").document(fieldId)
+                .set(updatedField.toMap()) // Use set with merge if you want to only update provided fields, or full set for replacement
                 .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
@@ -1504,91 +1485,88 @@ public class FirebaseManager {
      * @param fieldId The ID of the field to delete.
      * @param callback Callback for success/failure.
      */
-    public void deleteField(String fieldId, DataCallback<Void> callback) {
+    public void deleteField(String fieldId, DataCallback<Void> callback) { // THIS WAS MISSING OR HAD WRONG SIGNATURE
         db.collection(FIELDS_COLLECTION).document(fieldId)
                 .delete()
                 .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    /**
-     * Retrieves all fields.
-     * @param callback Callback with a list of Field objects.
-     */
+
     public void getAllFields(DataCallback<List<Field>> callback) {
-        db.collection(FIELDS_COLLECTION)
+        db.collection("fields")
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<Field> fields = new ArrayList<>();
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        fields.add(document.toObject(Field.class));
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<Field> fields = new ArrayList<>();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            try {
+                                Field field = document.toObject(Field.class);
+                                fields.add(field);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing field document: " + document.getId(), e);
+                            }
+                        }
+                        callback.onSuccess(fields);
+                    } else {
+                        callback.onFailure(task.getException() != null ? task.getException().getMessage() : "Unknown error");
                     }
-                    callback.onSuccess(fields);
-                })
-                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+                });
     }
 
-    // --- Admin: Course Management & Assignment ---
+    // --- Course Operations (UPDATED to handle courseScheduleEntry) ---
 
-    /**
-     * Creates a new course.
-     * @param course The Course object to create.
-     * @param callback Callback for success/failure.
-     */
     public void createCourse(Course course, DataCallback<Void> callback) {
-        // Ensure courseId is set, or generate one if not provided (e.g., in constructor)
-        if (course.getCourseId() == null || course.getCourseId().isEmpty()) {
-            course.setCourseId(UUID.randomUUID().toString());
-        }
-        db.collection(COURSES_COLLECTION).document(course.getCourseId())
-                .set(course.toMap())
+        db.collection("courses").document(course.getCourseId())
+                .set(course.toMap()) // Use toMap() which now includes courseScheduleEntry
                 .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    /**
-     * Modifies an existing course.
-     * @param courseId The ID of the course to modify.
-     * @param updates A map of fields to update.
-     * @param callback Callback for success/failure.
-     */
+    // Changed to accept a Course object for full replacement/update
     public void modifyCourse(String courseId, Map<String, Object> updates, DataCallback<Void> callback) {
-        updates.put("lastUpdatedAt", Timestamp.now()); // Assuming a 'lastUpdatedAt' field in Course model
-        db.collection(COURSES_COLLECTION).document(courseId)
+        // If using map, ensure 'courseScheduleEntry' is passed as a nested map
+        db.collection("courses").document(courseId)
                 .update(updates)
                 .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    /**
-     * Deletes a course.
-     * @param courseId The ID of the course to delete.
-     * @param callback Callback for success/failure.
-     */
+    public void modifyCourse(String courseId, Course updatedCourse, DataCallback<Void> callback) {
+        db.collection("courses").document(courseId)
+                .set(updatedCourse.toMap()) // Overwrite the document with the new course object
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+
     public void deleteCourse(String courseId, DataCallback<Void> callback) {
-        db.collection(COURSES_COLLECTION).document(courseId)
+        db.collection("courses").document(courseId)
                 .delete()
                 .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    /**
-     * Retrieves all courses.
-     * @param callback Callback with a list of Course objects.
-     */
     public void getAllCourses(DataCallback<List<Course>> callback) {
-        db.collection(COURSES_COLLECTION)
+        db.collection("courses")
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<Course> courses = new ArrayList<>();
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        courses.add(document.toObject(Course.class));
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<Course> courses = new ArrayList<>();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            try {
+                                Course course = document.toObject(Course.class);
+                                courses.add(course);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing course document: " + document.getId(), e);
+                            }
+                        }
+                        callback.onSuccess(courses);
+                    } else {
+                        callback.onFailure(task.getException() != null ? task.getException().getMessage() : "Unknown error");
                     }
-                    callback.onSuccess(courses);
-                })
-                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+                });
     }
-
     /**
      * Assigns a course to a teacher using a transaction for atomicity.
      * Updates both the teacher's `assignedCourseIds` and the course's `teacherEmail`/`teacherName`/`department`.
