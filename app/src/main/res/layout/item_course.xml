@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardElevation="4dp"
+    app:cardCornerRadius="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_course_name_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:text="Nom du Cours"
+            android:textColor="@color/black"/>
+
+        <TextView
+            android:id="@+id/tv_course_department_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Département: Génie Logiciel"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/tv_course_field_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Filière: Informatique"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/tv_course_teacher_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enseignant: Non affecté"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/tv_course_target_years_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Années cibles: 1ère Année"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/btn_assign_teacher"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Affecter Enseignant"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btn_edit_course"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Modifier"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btn_delete_course"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Supprimer"
+                android:backgroundTint="@color/design_default_color_error"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

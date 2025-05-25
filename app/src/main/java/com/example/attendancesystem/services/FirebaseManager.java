@@ -6,6 +6,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.attendancesystem.models.Course;
+import com.example.attendancesystem.models.Field;
 import com.example.attendancesystem.models.Justification;
 import com.example.attendancesystem.models.Session;
 import com.example.attendancesystem.models.Student;
@@ -20,6 +22,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -37,6 +40,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class FirebaseManager {
     private static final String TAG = "FirebaseManager";
@@ -48,6 +52,7 @@ public class FirebaseManager {
 
     // Collections Firestore selon la nouvelle architecture
     private static final String STUDENTS_COLLECTION = "students";
+    private static final String FIELDS_COLLECTION = "fields";
     private static final String TEACHERS_COLLECTION = "teachers";
     private static final String ADMINS_COLLECTION = "admins";
     private static final String ATTENDANCE_COLLECTION = "attendance";
@@ -1435,6 +1440,239 @@ public class FirebaseManager {
     }
 
 
+    // =====================================================================
+    // --- NEW: Field (Filière) Management Methods ---
+    // =====================================================================
+
+    /**
+     * Creates a new field (filière) document in Firestore.
+     * @param field The Field object to save. Its fieldId will be used as the document ID.
+     * @param callback Callback for success or failure.
+     */
+    public void createField(Field field, DataCallback<Void> callback) {
+        if (field.getFieldId() == null || field.getFieldId().isEmpty()) {
+            callback.onFailure("Field ID cannot be null or empty for creation.");
+            return;
+        }
+        db.collection("fields").document(field.getFieldId())
+                .set(field) // Firestore can directly convert Field object to document
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Field created: " + field.getFieldName());
+                    callback.onSuccess(aVoid);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error creating field: " + field.getFieldName(), e);
+                    callback.onFailure("Failed to create field: " + e.getMessage());
+                });
+    }
+
+    // --- Admin: Field Management (Filières) ---
+
+    /**
+     * Creates a new field (filière).
+     * @param fieldName The name of the field.
+     * @param department The department.
+     * @param description A description.
+     * @param callback Callback for success/failure.
+     */
+    public void createField(String fieldName, String department, String description, DataCallback<Void> callback) {
+        String fieldId = UUID.randomUUID().toString(); // Generate unique ID
+        Field newField = new Field(fieldId, fieldName, department, description);
+
+        db.collection(FIELDS_COLLECTION).document(fieldId)
+                .set(newField.toMap())
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Modifies an existing field.
+     * @param fieldId The ID of the field to modify.
+     * @param updates A map of fields to update.
+     * @param callback Callback for success/failure.
+     */
+    public void modifyField(String fieldId, Map<String, Object> updates, DataCallback<Void> callback) {
+        updates.put("lastUpdatedAt", Timestamp.now());
+        db.collection(FIELDS_COLLECTION).document(fieldId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Deletes a field.
+     * @param fieldId The ID of the field to delete.
+     * @param callback Callback for success/failure.
+     */
+    public void deleteField(String fieldId, DataCallback<Void> callback) {
+        db.collection(FIELDS_COLLECTION).document(fieldId)
+                .delete()
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Retrieves all fields.
+     * @param callback Callback with a list of Field objects.
+     */
+    public void getAllFields(DataCallback<List<Field>> callback) {
+        db.collection(FIELDS_COLLECTION)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Field> fields = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        fields.add(document.toObject(Field.class));
+                    }
+                    callback.onSuccess(fields);
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    // --- Admin: Course Management & Assignment ---
+
+    /**
+     * Creates a new course.
+     * @param course The Course object to create.
+     * @param callback Callback for success/failure.
+     */
+    public void createCourse(Course course, DataCallback<Void> callback) {
+        // Ensure courseId is set, or generate one if not provided (e.g., in constructor)
+        if (course.getCourseId() == null || course.getCourseId().isEmpty()) {
+            course.setCourseId(UUID.randomUUID().toString());
+        }
+        db.collection(COURSES_COLLECTION).document(course.getCourseId())
+                .set(course.toMap())
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Modifies an existing course.
+     * @param courseId The ID of the course to modify.
+     * @param updates A map of fields to update.
+     * @param callback Callback for success/failure.
+     */
+    public void modifyCourse(String courseId, Map<String, Object> updates, DataCallback<Void> callback) {
+        updates.put("lastUpdatedAt", Timestamp.now()); // Assuming a 'lastUpdatedAt' field in Course model
+        db.collection(COURSES_COLLECTION).document(courseId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Deletes a course.
+     * @param courseId The ID of the course to delete.
+     * @param callback Callback for success/failure.
+     */
+    public void deleteCourse(String courseId, DataCallback<Void> callback) {
+        db.collection(COURSES_COLLECTION).document(courseId)
+                .delete()
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Retrieves all courses.
+     * @param callback Callback with a list of Course objects.
+     */
+    public void getAllCourses(DataCallback<List<Course>> callback) {
+        db.collection(COURSES_COLLECTION)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Course> courses = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        courses.add(document.toObject(Course.class));
+                    }
+                    callback.onSuccess(courses);
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Assigns a course to a teacher using a transaction for atomicity.
+     * Updates both the teacher's `assignedCourseIds` and the course's `teacherEmail`/`teacherName`/`department`.
+     *
+     * @param teacherEmail The email of the teacher.
+     * @param courseId The ID of the course.
+     * @param teacherName The name of the teacher.
+     * @param department The department associated with the course.
+     * @param callback Callback for success/failure.
+     */
+    public void assignCourseToTeacher(String teacherEmail, String courseId, String teacherName, String department, DataCallback<Void> callback) {
+        DocumentReference teacherRef = db.collection(TEACHERS_COLLECTION).document(teacherEmail);
+        DocumentReference courseRef = db.collection(COURSES_COLLECTION).document(courseId);
+
+        db.runTransaction(transaction -> {
+                    // Update teacher's assigned courses
+                    transaction.update(teacherRef, "assignedCourseIds", FieldValue.arrayUnion(courseId));
+
+                    // Update course with teacher info
+                    Map<String, Object> courseUpdates = new HashMap<>();
+                    courseUpdates.put("teacherEmail", teacherEmail);
+                    courseUpdates.put("teacherName", teacherName);
+                    courseUpdates.put("department", department);
+                    transaction.update(courseRef, courseUpdates);
+
+                    return null;
+                })
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Unassigns a course from a teacher using a transaction for atomicity.
+     * Updates both the teacher's `assignedCourseIds` and the course's `teacherEmail`/`teacherName`.
+     *
+     * @param teacherEmail The email of the teacher.
+     * @param courseId The ID of the course.
+     * @param callback Callback for success/failure.
+     */
+    public void unassignCourseFromTeacher(String teacherEmail, String courseId, DataCallback<Void> callback) {
+        DocumentReference teacherRef = db.collection(TEACHERS_COLLECTION).document(teacherEmail);
+        DocumentReference courseRef = db.collection(COURSES_COLLECTION).document(courseId);
+
+        db.runTransaction(transaction -> {
+                    // Remove course from teacher's assigned courses
+                    transaction.update(teacherRef, "assignedCourseIds", FieldValue.arrayRemove(courseId));
+
+                    // Clear teacher info from course
+                    Map<String, Object> courseUpdates = new HashMap<>();
+                    courseUpdates.put("teacherEmail", null);
+                    courseUpdates.put("teacherName", null);
+                    transaction.update(courseRef, courseUpdates);
+
+                    return null;
+                })
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Assigns a field to a teacher.
+     * @param teacherEmail The email of the teacher.
+     * @param fieldId The ID of the field.
+     * @param callback Callback for success/failure.
+     */
+    public void assignFieldToTeacher(String teacherEmail, String fieldId, DataCallback<Void> callback) {
+        db.collection(TEACHERS_COLLECTION).document(teacherEmail)
+                .update("assignedFieldIds", FieldValue.arrayUnion(fieldId))
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    /**
+     * Unassigns a field from a teacher.
+     * @param teacherEmail The email of the teacher.
+     * @param fieldId The ID of the field.
+     * @param callback Callback for success/failure.
+     */
+    public void unassignFieldFromTeacher(String teacherEmail, String fieldId, DataCallback<Void> callback) {
+        db.collection(TEACHERS_COLLECTION).document(teacherEmail)
+                .update("assignedFieldIds", FieldValue.arrayRemove(fieldId))
+                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
 
     // =================== MÉTHODES UTILITAIRES ===================
 

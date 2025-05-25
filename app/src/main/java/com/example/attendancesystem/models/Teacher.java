@@ -3,11 +3,13 @@ package com.example.attendancesystem.models;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.PropertyName;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Teacher {
-    private String email; // Identifiant unique
+    private String email; // Unique identifier
     private String fullName;
     private String employeeId;
     private String profileImageUrl;
@@ -19,13 +21,17 @@ public class Teacher {
     private NotificationPreferences notificationPreferences;
     private Timestamp lastLoginAt;
     private Timestamp lastUpdatedAt;
+    private List<String> assignedCourseIds; // New field for assigned courses
+    private List<String> assignedFieldIds;   // New field for assigned fields (filières)
 
-    // Constructeur vide requis pour Firebase
+    // Required public no-argument constructor for Firebase
     public Teacher() {
         this.notificationPreferences = new NotificationPreferences();
+        this.assignedCourseIds = new ArrayList<>(); // Initialize to an empty list
+        this.assignedFieldIds = new ArrayList<>();   // Initialize to an empty list
     }
 
-    // Constructeur avec paramètres essentiels
+    // Constructor with essential parameters
     public Teacher(String email, String fullName, String employeeId, String department) {
         this.email = email;
         this.fullName = fullName;
@@ -36,21 +42,27 @@ public class Teacher {
         this.profileImageUrl = "";
         this.notificationPreferences = new NotificationPreferences();
         this.lastUpdatedAt = Timestamp.now();
+        this.assignedCourseIds = new ArrayList<>();
+        this.assignedFieldIds = new ArrayList<>();
     }
+
+    // Constructor with phone number
     public Teacher(String email, String fullName, String employeeId, String department, String phoneNumber) {
         this.email = email;
         this.fullName = fullName;
         this.employeeId = employeeId;
         this.department = department;
-        this.phoneNumber = phoneNumber; // Ensure this is set
-        this.profileImageUrl = ""; // Default empty
-        this.isActive = true; // Default true
+        this.phoneNumber = phoneNumber;
+        this.profileImageUrl = "";
+        this.isActive = true;
         this.createdAt = Timestamp.now();
         this.lastUpdatedAt = Timestamp.now();
-        this.lastLoginAt = null; // Default null
+        this.lastLoginAt = null;
+        this.assignedCourseIds = new ArrayList<>();
+        this.assignedFieldIds = new ArrayList<>();
     }
 
-    // Méthode pour convertir en Map pour Firebase
+    // Method to convert to Map for Firebase
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("email", email);
@@ -66,6 +78,8 @@ public class Teacher {
         }
         map.put("lastLoginAt", lastLoginAt);
         map.put("lastUpdatedAt", lastUpdatedAt);
+        map.put("assignedCourseIds", assignedCourseIds); // Add new field to map
+        map.put("assignedFieldIds", assignedFieldIds);   // Add new field to map
         return map;
     }
 
@@ -81,6 +95,8 @@ public class Teacher {
     public NotificationPreferences getNotificationPreferences() { return notificationPreferences; }
     public Timestamp getLastLoginAt() { return lastLoginAt; }
     public Timestamp getLastUpdatedAt() { return lastUpdatedAt; }
+    public List<String> getAssignedCourseIds() { return assignedCourseIds; }
+    public List<String> getAssignedFieldIds() { return assignedFieldIds; }
 
     // Setters
     public void setEmail(String email) { this.email = email; }
@@ -96,6 +112,8 @@ public class Teacher {
     }
     public void setLastLoginAt(Timestamp lastLoginAt) { this.lastLoginAt = lastLoginAt; }
     public void setLastUpdatedAt(Timestamp lastUpdatedAt) { this.lastUpdatedAt = lastUpdatedAt; }
+    public void setAssignedCourseIds(List<String> assignedCourseIds) { this.assignedCourseIds = assignedCourseIds; }
+    public void setAssignedFieldIds(List<String> assignedFieldIds) { this.assignedFieldIds = assignedFieldIds; }
 
     @Override
     public String toString() {
@@ -104,6 +122,8 @@ public class Teacher {
                 ", fullName='" + fullName + '\'' +
                 ", employeeId='" + employeeId + '\'' +
                 ", department='" + department + '\'' +
+                ", assignedCourseIds=" + assignedCourseIds +
+                ", assignedFieldIds=" + assignedFieldIds +
                 '}';
     }
 }

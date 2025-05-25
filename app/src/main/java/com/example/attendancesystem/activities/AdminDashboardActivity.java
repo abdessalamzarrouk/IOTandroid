@@ -20,7 +20,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     // Views
     private TextView tvWelcome, tvTotalUsers, tvActiveTerminals, tvTodayAttendance;
-    private CardView cardUserManagement, cardTerminalManagement, cardSystemReports, cardSystemConfig;
+    private CardView cardUserManagement, cardTerminalManagement, cardSystemReports, cardSystemConfig, cardFieldManagement, cardCourseManagement;
+
 
     // Firebase
     private FirebaseManager firebaseManager;
@@ -60,6 +61,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         cardTerminalManagement = findViewById(R.id.card_terminal_management);
         cardSystemReports = findViewById(R.id.card_system_reports);
         cardSystemConfig = findViewById(R.id.card_system_config);
+        cardFieldManagement = findViewById(R.id.card_field_management);
+        cardCourseManagement = findViewById(R.id.card_course_management);
+
     }
 
     private void loadUserData() {
@@ -113,6 +117,13 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
+        cardFieldManagement.setOnClickListener(v -> {
+            startActivity(new Intent(AdminDashboardActivity.this, AdminFieldManagementActivity.class));
+        });
+
+        cardCourseManagement.setOnClickListener(v -> {
+            startActivity(new Intent(AdminDashboardActivity.this, AdminCourseManagementActivity.class));
+        });
         cardUserManagement.setOnClickListener(v -> {
             Utils.showToast(this, "Redirection vers la gestion des users...");
             Intent intent = new Intent(AdminDashboardActivity.this, AdminUserManagementActivity.class);

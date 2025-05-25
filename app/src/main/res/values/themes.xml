@@ -11,6 +11,13 @@
         <item name="android:windowBackground">@color/background_color</item>
     </style>
 
+
+    <style name="Theme.AttendanceSystem.Dialog" parent="Theme.MaterialComponents.Light.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowMinWidthMajor">90%</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+    </style>
     <!-- Theme with ActionBar for activities that don't use custom toolbar -->
     <style name="Theme.FaceAttendanceSystem.ActionBar" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <item name="colorPrimary">@color/primary_color</item>

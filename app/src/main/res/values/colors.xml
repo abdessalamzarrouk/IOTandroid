@@ -13,6 +13,7 @@
     <!-- Couleurs de background -->
     <color name="background_color">#F5F5F5</color>
     <color name="surface_color">#FFFFFF</color>
+    <color name="design_default_color_error">#FFDA4D4A</color>
 
     <!-- Couleurs de texte -->
     <color name="text_primary">#212121</color>

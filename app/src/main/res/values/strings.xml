@@ -1,4 +1,21 @@
 <resources>
+
+    <string name="title_activity_admin_field_management">Gestion des Filières</string>
+    <string name="title_activity_admin_course_management">Gestion des Cours</string>
+    <string name="hint_field_name">Nom de la Filière</string>
+    <string name="hint_field_department">Département</string>
+    <string name="hint_field_description">Description (Optionnel)</string>
+    <string name="btn_save">Enregistrer</string>
+    <string name="btn_add_new_field">Ajouter une nouvelle Filière</string>
+    <string name="hint_course_name">Nom du Cours</string>
+    <string name="hint_course_department">Département</string>
+    <string name="text_field_associated">Filière associée :</string>
+    <string name="text_target_years">Années cibles (promotion) :</string>
+    <string name="btn_add_new_course">Ajouter un nouveau Cours</string>
+    <string name="text_assign_teacher_to_course">Affecter un enseignant au cours: %1$s</string>
+    <string name="text_select_teacher">Sélectionner un enseignant :</string>
+    <string name="btn_assign_teacher">Affecter</string>
+    <string name="btn_unassign_teacher">Désaffecter</string>
     <string name="app_name">Face Attendance System</string>
 
     <!-- Login & Register -->
